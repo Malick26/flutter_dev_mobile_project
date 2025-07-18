@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+import '../../models/post_model.dart';
+
+final List<Post> actualites = [
+  Post(
+    id: 1,
+    title: 'Nouveau parc urbain inauguré',
+    category: 'Aménagement',
+    author: 'Mairie',
+    time: '3h',
+    content: 'Le parc des Érables ouvre ses portes...',
+    likes: 45,
+    comments: 15,
+    emoji: '🌳',
+    color: Colors.purple,
+  ),
+ Post(
+      id: 2,
+      title: 'Travaux rue principale',
+      category: 'Circulation',
+      author: 'Services techniques',
+      time: '6h',
+      content: 'Travaux de rénovation jusqu\'au 15 juin. Circulation alternée et déviation par l\'avenue de la Paix.',
+      likes: 12,
+      comments: 6,
+      emoji: '🚧',
+      color: Colors.orange,
+ ),
+    Post(
+      id: 3,
+      title: 'Festival de quartier le 15-16 juin',
+      category: 'Événements',
+      author: 'Comité des fêtes',
+      time: '2j',
+      content: 'Musique, food trucks et animations pour tous ! Participation libre. Venez nombreux !',
+      likes: 67,
+      comments: 23,
+      emoji: '🎪',
+      color: Colors.pink,
+    ),
+     Post(
+      id: 3,
+      title: 'Festival de quartier le 15-16 juin',
+      category: 'Événements',
+      author: 'Comité des fêtes',
+      time: '2j',
+      content: 'Musique, food trucks et animations pour tous ! Participation libre. Venez nombreux !',
+      likes: 67,
+      comments: 23,
+      emoji: '🎪',
+      color: Colors.pink,
+    ),
+];
