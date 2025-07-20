@@ -8,7 +8,6 @@ import '../../widgets/drawercertificat.dart';
 import '../../widgets/header.dart';
 import 'package:dev_mobile/config/api_config.dart';
 
-
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
 
@@ -22,14 +21,6 @@ class _HistoryPageState extends State<HistoryPage> {
   String _searchTerm = '';
   bool _isLoading = true;
   List<Document> documents = [];
-
-  void openDrawer() {
-    _scaffoldKey.currentState?.openEndDrawer();
-  }
-
-  void closeDrawer() {
-    Navigator.of(context).pop();
-  }
 
   @override
   void initState() {
@@ -102,7 +93,9 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
             const SizedBox(height: 10),
             _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
                 : Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(8),
@@ -176,8 +169,8 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
+        onPressed: () async {
+          final result = await showModalBottomSheet<bool>(
             context: context,
             isScrollControlled: true,
             shape: const RoundedRectangleBorder(
@@ -185,12 +178,19 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
             builder: (context) {
               return DrawerCertificat(
-                onClose: () {
-                  Navigator.of(context).pop();
+                onClose: (bool added) {
+                  Navigator.of(context).pop(added);
                 },
               );
             },
           );
+
+          if (result == true) {
+            setState(() {
+              _isLoading = true;
+            });
+            await fetchDocuments();
+          }
         },
         backgroundColor: AppColors.three,
         child: const Icon(Icons.add),

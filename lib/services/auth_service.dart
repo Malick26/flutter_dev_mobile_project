@@ -56,7 +56,7 @@ class AuthService {
 
 
   Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
-  final url = Uri.parse('http://127.0.0.1:8000/api/register-habitant');
+  final url = Uri.parse('${ApiConfig.baseUrl}/register-habitant');
 
   try {
     final response = await http.post(

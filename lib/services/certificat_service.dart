@@ -73,7 +73,7 @@ class CertificatService {
   }
 Future<bool> livrerCertificat(int id) async {
   final url = Uri.parse('${ApiConfig.baseUrl}/certificats/$id/livrer');
-  final response = await http.put(url); // ✅ Remplacement ici
+  final response = await http.put(url); 
 
   return response.statusCode == 200;
 }
