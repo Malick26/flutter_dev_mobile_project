@@ -3,7 +3,7 @@ import '../../services/certificat_service.dart';
 import '../../color.dart';
 
 class DrawerCertificat extends StatefulWidget {
-  final VoidCallback onClose;
+  final void Function(bool added) onClose;
 
   const DrawerCertificat({required this.onClose});
 
@@ -41,7 +41,7 @@ class _DrawerCertificatState extends State<DrawerCertificat> {
     );
 
     if (result['success']) {
-      widget.onClose(); // Fermer le bottom sheet
+      widget.onClose(true); // Fermer avec succès
     }
   }
 
@@ -61,6 +61,8 @@ class _DrawerCertificatState extends State<DrawerCertificat> {
           children: [
             Text("Demande de certificat", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
+
+            // Livraison Switch
             Row(
               children: [
                 Text("Livraison :"),
@@ -74,6 +76,8 @@ class _DrawerCertificatState extends State<DrawerCertificat> {
               ],
             ),
             const SizedBox(height: 10),
+
+            // Choix du nombre
             Row(
               children: [
                 Text("Nombre : "),
@@ -92,11 +96,15 @@ class _DrawerCertificatState extends State<DrawerCertificat> {
               ],
             ),
             const SizedBox(height: 15),
+
+            // Total à payer
             Text(
               "Total à payer : ${calculerTotal()} FCFA",
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
+
+            // Bouton Envoyer
             SizedBox(
               width: double.infinity,
               height: 50,
