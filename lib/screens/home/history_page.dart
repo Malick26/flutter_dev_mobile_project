@@ -92,79 +92,91 @@ class _HistoryPageState extends State<HistoryPage> {
               },
             ),
             const SizedBox(height: 10),
-            _isLoading
-                ? const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                : Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: ListView.builder(
-                        itemCount: filteredDocuments.length,
-                        itemBuilder: (context, index) {
-                          final doc = filteredDocuments[index];
-                          return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.two,
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 6,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredDocuments.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              "Vous n'avez encore fait aucune demande de certificat.",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.quatre,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      doc.nom,
-                                      style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: ListView.builder(
+                            itemCount: filteredDocuments.length,
+                            itemBuilder: (context, index) {
+                              final doc = filteredDocuments[index];
+                              return Container(
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.two,
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 3),
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text('Date : ${doc.date}'),
-                                    const SizedBox(height: 1),
-                                    Text('nombre : ${doc.nbr}'),
                                   ],
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: doc.statut == 'En attente'
-                                        ? Colors.orange.shade100
-                                        : doc.statut == 'Livrée'
-                                            ? Colors.green.shade100
-                                            : Colors.blue.shade100,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    doc.statut,
-                                    style: TextStyle(
-                                      color: doc.statut == 'En attente'
-                                          ? Colors.orange
-                                          : doc.statut == 'Livrée'
-                                              ? Colors.green
-                                              : Colors.blue,
-                                      fontWeight: FontWeight.bold,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          doc.nom,
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text('Date : ${doc.date}'),
+                                        const SizedBox(height: 1),
+                                        Text('Nombre : ${doc.nbr}'),
+                                      ],
                                     ),
-                                  ),
-                                )
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: doc.statut == 'En attente'
+                                            ? Colors.orange.shade100
+                                            : doc.statut == 'Livrée'
+                                                ? Colors.green.shade100
+                                                : Colors.blue.shade100,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        doc.statut,
+                                        style: TextStyle(
+                                          color: doc.statut == 'En attente'
+                                              ? Colors.orange
+                                              : doc.statut == 'Livrée'
+                                                  ? Colors.green
+                                                  : Colors.blue,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+            ),
           ],
         ),
       ),
@@ -192,8 +204,8 @@ class _HistoryPageState extends State<HistoryPage> {
             await fetchDocuments();
           }
         },
-        backgroundColor: AppColors.three,
-        child: const Icon(Icons.add),
+        backgroundColor: AppColors.one,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:dev_mobile/providers/auth_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dev_mobile/config/api_config.dart';
-
-
-// Remplace par ton vrai header
-import '../../widgets/header.dart';
+import 'package:dev_mobile/screens/auth/loginScreen.dart';
+import 'package:dev_mobile/widgets/header.dart';
+import 'package:dev_mobile/color.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -19,7 +20,6 @@ class SettingPage extends StatefulWidget {
 
 class _SettingPageState extends State<SettingPage> {
   File? _cinFile;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   String _searchTerm = '';
   bool _isUploading = false;
@@ -48,9 +48,7 @@ class _SettingPageState extends State<SettingPage> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final userJson = prefs.getString('user');
-      if (token == null || userJson == null) {
-        throw Exception("Utilisateur non connecté");
-      }
+      if (token == null || userJson == null) throw Exception("Utilisateur non connecté");
 
       final user = Map<String, dynamic>.from(jsonDecode(userJson));
       final int userId = user['id'];
@@ -67,7 +65,7 @@ class _SettingPageState extends State<SettingPage> {
           const SnackBar(content: Text('Fichier envoyé avec succès')),
         );
         setState(() {
-          _cinFile = null; 
+          _cinFile = null;
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,10 +83,113 @@ class _SettingPageState extends State<SettingPage> {
     }
   }
 
+  void _showChangePasswordDialog() {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.three,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Changer le mot de passe',
+            style: TextStyle(
+              color: AppColors.quatre,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildPasswordField('Mot de passe actuel', currentPasswordController),
+                const SizedBox(height: 12),
+                _buildPasswordField('Nouveau mot de passe', newPasswordController),
+                const SizedBox(height: 12),
+                _buildPasswordField('Confirmer le nouveau mot de passe', confirmPasswordController),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final current = currentPasswordController.text.trim();
+                final newPass = newPasswordController.text.trim();
+                final confirm = confirmPasswordController.text.trim();
+
+                if (newPass != confirm) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Les mots de passe ne correspondent pas')),
+                  );
+                  return;
+                }
+
+                final prefs = await SharedPreferences.getInstance();
+                final token = prefs.getString('token');
+                if (token == null) return;
+
+                final response = await http.post(
+                  Uri.parse('${ApiConfig.baseUrl}/password/update'),
+                  headers: {
+                    'Authorization': 'Bearer $token',
+                    'Content-Type': 'application/json',
+                  },
+                  body: jsonEncode({
+                    'current_password': current,
+                    'new_password': newPass,
+                    'new_password_confirmation': confirm,
+                  }),
+                );
+
+                if (response.statusCode == 200) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Mot de passe mis à jour avec succès')),
+                  );
+                } else {
+                  final error = jsonDecode(response.body);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(error['message'] ?? 'Erreur')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.one,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Enregistrer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildPasswordField(String label, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      obscureText: true,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: AppColors.quatre),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: AppColors.three,
       body: SafeArea(
         child: Column(
           children: [
@@ -120,12 +221,26 @@ class _SettingPageState extends State<SettingPage> {
                     _buildSettingItem(
                       icon: Icons.lock,
                       title: 'Changer le mot de passe',
-                      onTap: () {},
+                      onTap: _showChangePasswordDialog,
                     ),
                     _buildSettingItem(
                       icon: Icons.logout,
                       title: 'Se déconnecter',
-                      onTap: () {},
+                      onTap: () async {
+                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                        await authProvider.logout();
+
+                        if (!mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Déconnexion réussie')),
+                        );
+
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) =>  LoginScreen()),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -156,7 +271,7 @@ class _SettingPageState extends State<SettingPage> {
               icon: const Icon(Icons.upload),
               label: const Text('Choisir un fichier'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
+                backgroundColor: AppColors.one,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -225,8 +340,8 @@ class _SettingPageState extends State<SettingPage> {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
-        backgroundColor: Colors.deepPurple.withOpacity(0.1),
-        child: Icon(icon, color: Colors.deepPurple),
+        backgroundColor: AppColors.one.withOpacity(0.1),
+        child: Icon(icon, color: AppColors.one),
       ),
       title: Text(title),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),

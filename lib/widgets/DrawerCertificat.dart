@@ -13,110 +13,149 @@ class DrawerCertificat extends StatefulWidget {
 
 class _DrawerCertificatState extends State<DrawerCertificat> {
   final _formKey = GlobalKey<FormState>();
+  int _nombreCertificats = 1;
   bool livraison = false;
-  int nombreCertificats = 1;
-  bool isLoading = false;
+  bool _isLoading = false;
 
-  int calculerTotal() {
-    int total = 500 * nombreCertificats;
-    if (livraison) total += 300; // Livraison une seule fois
+  int get prixTotal {
+    int total = _nombreCertificats * 500;
+    if (livraison) total += 300;
     return total;
   }
 
-  Future<void> envoyerDemande() async {
-    if (!_formKey.currentState!.validate()) return;
+  void _envoyerDemande() async {
+    if (_nombreCertificats <= 0) return;
 
-    setState(() => isLoading = true);
+    setState(() => _isLoading = true);
 
     final service = CertificatService();
     final result = await service.envoyerDemande(
-      livraison: livraison ? "oui" : "non",
-      nombreCertificats: nombreCertificats,
+      livraison: livraison ? "Oui" : "Non",
+      nombreCertificats: _nombreCertificats,
     );
 
-    setState(() => isLoading = false);
+    setState(() => _isLoading = false);
+    widget.onClose(true); // Ferme le drawer
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result['message'])),
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.three,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          result['success'] ? "Succès" : "Erreur",
+          style: TextStyle(
+            color: result['success'] ? AppColors.one : Colors.red,
+          ),
+        ),
+        content: Text(
+          result['message'],
+          style: TextStyle(color: AppColors.quatre),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text("OK", style: TextStyle(color: AppColors.one)),
+          )
+        ],
+      ),
     );
-
-    if (result['success']) {
-      widget.onClose(true); // Fermer avec succès
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        top: 20,
-        left: 20,
-        right: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("Demande de certificat", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-
-            // Livraison Switch
-            Row(
-              children: [
-                Text("Livraison :"),
-                Switch(
-                  value: livraison,
-                  onChanged: (value) {
-                    setState(() => livraison = value);
-                  },
-                ),
-                Text(livraison ? "Oui" : "Non"),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Choix du nombre
-            Row(
-              children: [
-                Text("Nombre : "),
-                SizedBox(width: 20),
-                DropdownButton<int>(
-                  value: nombreCertificats,
-                  items: List.generate(10, (i) => i + 1)
-                      .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => nombreCertificats = value);
-                    }
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 15),
-
-            // Total à payer
-            Text(
-              "Total à payer : ${calculerTotal()} FCFA",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-
-            // Bouton Envoyer
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : envoyerDemande,
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.one),
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Envoyer", style: TextStyle(color: Colors.white)),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.three,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Text(
+                "Demande de Certificat",
+                style: TextStyle(
+                    color: AppColors.one,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            if (_nombreCertificats > 1) {
+                              setState(() => _nombreCertificats--);
+                            }
+                          },
+                          icon: Icon(Icons.remove_circle_outline,
+                              color: AppColors.one),
+                        ),
+                        Text(
+                          '$_nombreCertificats',
+                          style: TextStyle(
+                              fontSize: 20, color: AppColors.quatre),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            setState(() => _nombreCertificats++);
+                          },
+                          icon: Icon(Icons.add_circle_outline,
+                              color: AppColors.one),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    SwitchListTile(
+                      title: Text("Souhaitez-vous une livraison ?",
+                          style: TextStyle(color: AppColors.quatre)),
+                      value: livraison,
+                      onChanged: (value) {
+                        setState(() {
+                          livraison = value;
+                        });
+                      },
+                      activeColor: AppColors.one,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "Prix total : ${prixTotal} F",
+                      style: TextStyle(
+                          color: AppColors.one,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16),
+                    ),
+                    const SizedBox(height: 20),
+                    _isLoading
+                        ? CircularProgressIndicator(color: AppColors.one)
+                        : ElevatedButton.icon(
+                            onPressed: _envoyerDemande,
+                            icon: Icon(Icons.send),
+                            label: Text("Envoyer"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.one,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 25, vertical: 12),
+                            ),
+                          ),
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );

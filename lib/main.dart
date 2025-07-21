@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '/screens/auth/loginScreen.dart';
+import '/InitScreen.dart';
 import 'providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -23,7 +24,8 @@ Widget build(BuildContext context) {
         scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
       ),
-      home: LoginScreen(),
+       home: InitScreen(),
+
     ),
   );
 }
