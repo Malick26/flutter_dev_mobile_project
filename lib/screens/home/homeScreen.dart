@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../services/data/astuces.dart';
-import '../../services/data/actualite.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; 
+import 'package:dev_mobile/config/api_config.dart';
+
 import '../../models/post_model.dart';
 import '../../widgets/post_card.dart';
+import '../../widgets/add_post_modal.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,14 +21,22 @@ class _HomePageState extends State<HomePage>
   final TextEditingController searchController = TextEditingController();
   String searchTerm = '';
 
+  List<Post> _allPosts = [];
+  bool _isLoadingPosts = true;
+  String? _postsErrorMessage;
+
+  final List<String> _astucesCategories = ['Économies', 'Transport', 'Santé'];
+  final List<String> _actualitesCategories = ['Aménagement', 'Circulation', 'Événements'];
+  
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      // Pour rafraîchir la vue lors du changement d'onglet
       setState(() {});
     });
+    _fetchPosts();
   }
 
   @override
@@ -34,20 +46,109 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
-  /// Filtre les données (astuces ou actualités) selon l'onglet actif et la recherche
-  List<Post> getFilteredData() {
-    final currentData = _tabController.index == 0 ? astuces : actualites;
-    if (searchTerm.isEmpty) return currentData;
+  Future<void> _fetchPosts() async {
+    setState(() {
+      _isLoadingPosts = true;
+      _postsErrorMessage = null;
+    });
+    try {
+      final String apiUrl = '${ApiConfig.baseUrl}/posts';
+      final response = await http.get(Uri.parse(apiUrl));
 
-    return currentData.where((item) {
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonResponse = jsonDecode(response.body);
+        setState(() {
+          _allPosts = jsonResponse.map((data) => Post.fromJson(data)).toList();
+        });
+      } else {
+        setState(() {
+          _postsErrorMessage = 'Échec du chargement des posts: ${response.statusCode} - ${response.body}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _postsErrorMessage = 'Impossible de se connecter au serveur ou erreur de parsing: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoadingPosts = false;
+      });
+    }
+  }
+
+  List<Post> getFilteredData() {
+    List<Post> currentTabPosts;
+
+    if (_tabController.index == 0) {
+      currentTabPosts = _allPosts.where((post) => _astucesCategories.contains(post.category)).toList();
+    } else {
+      currentTabPosts = _allPosts.where((post) => _actualitesCategories.contains(post.category)).toList();
+    }
+
+    if (searchTerm.isEmpty) return currentTabPosts;
+
+    return currentTabPosts.where((item) {
       final lowerSearch = searchTerm.toLowerCase();
       return item.title.toLowerCase().contains(lowerSearch) ||
           item.content.toLowerCase().contains(lowerSearch);
     }).toList();
   }
 
+  void _showAddPostModal() async { 
+    int? currentUserId; 
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userString = prefs.getString('user'); 
+
+      if (userString != null && userString.isNotEmpty) {
+        final user = jsonDecode(userString); 
+        currentUserId = user['id'] as int?; 
+      } else {
+        print('User data not found in SharedPreferences or is empty.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter pour publier un post.')),
+        );
+        return; 
+      }
+    } catch (e) {
+      print('Error retrieving user ID from SharedPreferences: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erreur lors de la récupération de l\'ID utilisateur.')),
+      );
+      return; 
+    }
+
+    if (currentUserId == null) {
+      print('currentUserId is null after retrieval. Cannot open AddPostModal.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID utilisateur introuvable. Impossible de publier.')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (BuildContext context) {
+        return AddPostModal(
+          currentUserId: currentUserId!, 
+          onPostAdded: (newPost) {
+            _fetchPosts();
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final astucesCount = _allPosts.where((post) => _astucesCategories.contains(post.category)).length;
+    final actualitesCount = _allPosts.where((post) => _actualitesCategories.contains(post.category)).length;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: PreferredSize(
@@ -65,7 +166,6 @@ class _HomePageState extends State<HomePage>
               padding: const EdgeInsets.all(8),
               child: Column(
                 children: [
-                  // Barre supérieure avec icônes et titre
                   Row(
                     children: [
                       Container(
@@ -110,9 +210,7 @@ class _HomePageState extends State<HomePage>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: IconButton(
-                          onPressed: () {
-                            // Action à définir pour le bouton "+"
-                          },
+                          onPressed: _showAddPostModal,
                           icon: const Icon(
                             Icons.add,
                             color: Colors.white,
@@ -124,7 +222,6 @@ class _HomePageState extends State<HomePage>
 
                   const SizedBox(height: 16),
 
-                  // Barre de recherche
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.15),
@@ -162,7 +259,6 @@ class _HomePageState extends State<HomePage>
       ),
       body: Column(
         children: [
-          // Onglets Astuces / Actualités
           Container(
             color: Colors.white,
             child: TabBar(
@@ -189,7 +285,7 @@ class _HomePageState extends State<HomePage>
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          '${astuces.length}',
+                          '$astucesCount',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.blue[800],
@@ -216,7 +312,7 @@ class _HomePageState extends State<HomePage>
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          '${actualites.length}',
+                          '$actualitesCount',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.blue[800],
@@ -231,22 +327,39 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          // Contenu des onglets
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildContentList(),
-                _buildContentList(),
-              ],
-            ),
+            child: _isLoadingPosts
+                ? const Center(child: CircularProgressIndicator())
+                : _postsErrorMessage != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                              const SizedBox(height: 16),
+                              Text(
+                                _postsErrorMessage!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.red, fontSize: 16),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _fetchPosts,
+                                child: const Text('Réessayer'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : _buildContentList(),
           ),
         ],
       ),
     );
   }
 
-  /// Widget affichant la liste filtrée ou un message d'absence de résultat
   Widget _buildContentList() {
     final filteredData = getFilteredData();
 
@@ -285,9 +398,7 @@ class _HomePageState extends State<HomePage>
             if (searchTerm.isEmpty) ...[
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {
-                  // Action à définir pour publier un post
-                },
+                onPressed: _showAddPostModal,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[600],
                   foregroundColor: Colors.white,

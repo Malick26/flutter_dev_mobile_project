@@ -19,7 +19,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController lieuNaissController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
@@ -37,7 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       "lieu_naiss": lieuNaissController.text.trim(),
       "email": emailController.text.trim(),
       "password": passwordController.text.trim(),
-      "quartier_id": 7, 
+      "quartier_id": 1,
     });
 
     setState(() {
@@ -91,16 +92,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(height: 15),
                 buildTextField("Nom", nomController),
                 SizedBox(height: 15),
-                buildTextField("Date de naissance (AAAA-MM-JJ)", dateNaissController),
+                buildTextField(
+                    "Date de naissance (AAAA-MM-JJ)", dateNaissController),
                 SizedBox(height: 15),
                 buildTextField("Lieu de naissance", lieuNaissController),
                 SizedBox(height: 15),
                 buildTextField("Email", emailController,
-                    keyboard: TextInputType.emailAddress, validator: validateEmail),
+                    keyboard: TextInputType.emailAddress,
+                    validator: validateEmail),
                 SizedBox(height: 15),
-                buildTextField("Mot de passe", passwordController, obscure: true),
+                buildTextField("Mot de passe", passwordController,
+                    obscure: true),
                 SizedBox(height: 15),
-                buildTextField("Confirmer mot de passe", confirmPasswordController,
+                buildTextField(
+                    "Confirmer mot de passe", confirmPasswordController,
                     obscure: true, validator: validateConfirmPassword),
                 SizedBox(height: 30),
                 SizedBox(
@@ -187,7 +192,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   String? validateConfirmPassword(String? value) {
-    if (value != passwordController.text) return 'Les mots de passe ne correspondent pas';
+    if (value != passwordController.text)
+      return 'Les mots de passe ne correspondent pas';
     return null;
   }
 }

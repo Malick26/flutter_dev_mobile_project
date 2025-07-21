@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.topLeft,
                   child: Padding(
                     padding: EdgeInsets.only(left: 26),
-                    child: Text("Connectez-vous à votre compte"),
+                    child: Text("Connectez-vous à votre compt"),
                   ),
                 ),
                 Padding(
